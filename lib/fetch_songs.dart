@@ -62,7 +62,6 @@ class FetchSongs {
         List<Song> trackDetails = [];
         for (var trackItem in tracks) {
           final String trackName = trackItem['track']['name'];
-          // final String artistName = trackItem['track']['artists'][0]['name'];
           late List<String> artists = [];
           for (var artist in trackItem['track']['artists']) {
             artists.add(artist['name']);

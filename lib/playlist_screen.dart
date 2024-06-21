@@ -1,7 +1,10 @@
-// playlist_screen.dart
-
-import 'package:flutter/material.dart';
+import 'dart:io';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:spotify/song.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 class PlaylistScreen extends StatefulWidget {
   final String playlistName;
@@ -20,6 +23,9 @@ class PlaylistScreen extends StatefulWidget {
 
 class _PlaylistScreenState extends State<PlaylistScreen> {
   Set<String> downloadedTrackIds = {};
+  static String ytKey = dotenv.env['youtube_key']!;
+  final String _baseURL = 'www.googleapis.com';
+  String token = '';
 
   @override
   void initState() {
@@ -29,19 +35,61 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
         widget.downloadedSongs.map((track) => track.name).toSet();
   }
 
-  void _downloadSong(Song track) {
+  Future _downloadSong(Song track) async {
+    String videoID = '';
+    try {
+      final String q = '${track.name} ${track.artists.first}';
+      final Map<String, String> parameters = {
+        'part': 'snippet',
+        'q': q,
+        'key': ytKey
+      };
+
+      Uri uri = Uri.https(_baseURL, '/youtube/v3/search', parameters);
+
+      var headers = {
+        HttpHeaders.contentTypeHeader: 'application/json',
+      };
+      var response = await http.get(uri, headers: headers);
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body);
+        videoID = data['items'][0]['id']['videoId'];
+        print(videoID);
+      } else {
+        throw json.decode(response.body)['error']['message'];
+      }
+    } catch (e) {
+      print('Error in youtubeAPI: $e');
+      throw e;
+    }
+    try {
+      var ytExplode = YoutubeExplode();
+      // var video = await ytExplode.videos.get(videoID);
+      var manifest = await ytExplode.videos.streamsClient.getManifest(videoID);
+      var streamInfo = manifest.audioOnly.withHighestBitrate();
+      var audioStream = ytExplode.videos.streamsClient.get(streamInfo);
+
+      print("success");
+
+      //implement file saving logic here
+      //  await stream.pipe(audioStream);
+
+      ytExplode.close();
+    } catch (e) {
+      print('Error in ytExplode: $e');
+      throw e;
+    }
     setState(() {
       downloadedTrackIds.add(track.name);
       widget.downloadedSongs.add(track);
     });
   }
 
-  void _downloadAllSongs() {
+  Future _downloadAllSongs() async {
     setState(() {
       for (var track in widget.tracks) {
         if (!downloadedTrackIds.contains(track.name)) {
-          downloadedTrackIds.add(track.name);
-          widget.downloadedSongs.add(track);
+          _downloadSong(track);
         }
       }
     });
@@ -49,6 +97,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
 
   @override
   Widget build(BuildContext context) {
+    dotenv.load(fileName: '.env');
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.playlistName),
