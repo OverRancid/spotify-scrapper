@@ -28,7 +28,19 @@ class _DownloadedSongsScreenState extends State<DownloadedSongsScreen> {
         itemBuilder: (context, index) {
           final track = widget.downloadedSongs[index];
           return ListTile(
-            title: Text('${track.name} by ${track.artists.first}'),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(track.name),
+                Text(
+                  track.artists.join(', '),
+                  style: TextStyle(
+                    color: Colors.grey[600], // Lighter color for artist names
+                    fontSize: 14.0,          // Smaller font size for artist names
+                  ),
+                ),
+              ],
+            ),
             trailing: IconButton(
               icon: const Icon(Icons.delete),
               onPressed: () => _deleteSong(index),

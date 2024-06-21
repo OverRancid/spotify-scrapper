@@ -4,13 +4,17 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:spotify/song.dart';
 
 class FetchSongs {
+
   static String clientId = dotenv.env['client_id']!;
   static String clientSecret = dotenv.env['client_secret']!;
+
 
   FetchSongs();
 
   Future<String> getAccessToken() async {
+
     await dotenv.load(fileName: ".env");
+
     print("clientID: $clientId");
     print("clientSecret: $clientSecret");
 
