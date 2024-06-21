@@ -5,8 +5,8 @@ import 'package:spotify/song.dart';
 
 class FetchSongs {
 
-  static String clientId ="50353b321b5746e4a13c0a6611e33ebd";
-  static String clientSecret ="dbfa000a0932445e88b99ab639b879c5";
+  static String clientId = dotenv.env['client_id']!;
+  static String clientSecret = dotenv.env['client_secret']!;
 
 
   FetchSongs();
