@@ -1,12 +1,11 @@
-// spotify_service.dart
-
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:spotify/song.dart';
 
 class FetchSongs {
-  late String clientId = dotenv.env['client_id']!;
-  late String clientSecret = dotenv.env['client_secret']!;
+  static String clientId = dotenv.env['client_id']!;
+  static String clientSecret = dotenv.env['client_secret']!;
 
   FetchSongs();
 
@@ -60,11 +59,15 @@ class FetchSongs {
         final String playlistName = data['name'];
         final List<dynamic> tracks = data['tracks']['items'];
 
-        List<Map<String, String>> trackDetails = [];
+        List<Song> trackDetails = [];
         for (var trackItem in tracks) {
           final String trackName = trackItem['track']['name'];
-          final String artistName = trackItem['track']['artists'][0]['name'];
-          trackDetails.add({'trackName': trackName, 'artistName': artistName});
+          // final String artistName = trackItem['track']['artists'][0]['name'];
+          late List<String> artists = [];
+          for (var artist in trackItem['track']['artists']) {
+            artists.add(artist['name']);
+          }
+          trackDetails.add(Song(name: trackName, artists: artists));
         }
 
         return {

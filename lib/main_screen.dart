@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:spotify/fetch_songs.dart';
 import 'package:spotify/playlist_screen.dart';
 import 'package:spotify/downlaoded_songs.dart';
+import 'package:spotify/song.dart';
 
 class MainScreen extends StatefulWidget {
   @override
@@ -12,7 +13,7 @@ class _MainScreenState extends State<MainScreen> {
   final TextEditingController _playlistUrlController = TextEditingController();
   final FetchSongs _fetchSongs = FetchSongs();
 
-  List<Map<String, String>> downloadedSongs = [];
+  List<Song> downloadedSongs = [];
 
   @override
   void dispose() {
@@ -26,11 +27,12 @@ class _MainScreenState extends State<MainScreen> {
       final playlistDetails =
           await _fetchSongs.fetchPlaylistDetails(playlistUrl);
       Navigator.push(
+        // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(
           builder: (context) => PlaylistScreen(
             playlistName: playlistDetails['playlistName'],
-            tracks: List<Map<String, String>>.from(playlistDetails['tracks']),
+            tracks: List<Song>.from(playlistDetails['tracks']),
             downloadedSongs: downloadedSongs,
           ),
         ),

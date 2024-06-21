@@ -1,9 +1,8 @@
-// downloaded_songs_screen.dart
-
 import 'package:flutter/material.dart';
+import 'package:spotify/song.dart';
 
 class DownloadedSongsScreen extends StatefulWidget {
-  final List<Map<String, String>> downloadedSongs;
+  final List<Song> downloadedSongs;
 
   DownloadedSongsScreen({required this.downloadedSongs});
 
@@ -29,9 +28,9 @@ class _DownloadedSongsScreenState extends State<DownloadedSongsScreen> {
         itemBuilder: (context, index) {
           final track = widget.downloadedSongs[index];
           return ListTile(
-            title: Text('${track['trackName']} by ${track['artistName']}'),
+            title: Text('${track.name} by ${track.artists.first}'),
             trailing: IconButton(
-              icon: Icon(Icons.delete),
+              icon: const Icon(Icons.delete),
               onPressed: () => _deleteSong(index),
             ),
           );

@@ -1,11 +1,12 @@
 // playlist_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:spotify/song.dart';
 
 class PlaylistScreen extends StatefulWidget {
   final String playlistName;
-  final List<Map<String, String>> tracks;
-  final List<Map<String, String>> downloadedSongs;
+  final List<Song> tracks;
+  final List<Song> downloadedSongs;
 
   PlaylistScreen({
     required this.playlistName,
@@ -24,12 +25,13 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
   void initState() {
     super.initState();
     // Initialize downloadedTrackIds with already downloaded songs
-    downloadedTrackIds = widget.downloadedSongs.map((track) => track['trackName']!).toSet();
+    downloadedTrackIds =
+        widget.downloadedSongs.map((track) => track.name).toSet();
   }
 
-  void _downloadSong(Map<String, String> track) {
+  void _downloadSong(Song track) {
     setState(() {
-      downloadedTrackIds.add(track['trackName']!);
+      downloadedTrackIds.add(track.name);
       widget.downloadedSongs.add(track);
     });
   }
@@ -37,8 +39,8 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
   void _downloadAllSongs() {
     setState(() {
       for (var track in widget.tracks) {
-        if (!downloadedTrackIds.contains(track['trackName']!)) {
-          downloadedTrackIds.add(track['trackName']!);
+        if (!downloadedTrackIds.contains(track.name)) {
+          downloadedTrackIds.add(track.name);
           widget.downloadedSongs.add(track);
         }
       }
@@ -52,7 +54,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
         title: Text(widget.playlistName),
         actions: [
           IconButton(
-            icon: Icon(Icons.download),
+            icon: const Icon(Icons.download),
             onPressed: _downloadAllSongs,
           ),
         ],
@@ -61,13 +63,13 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
         itemCount: widget.tracks.length,
         itemBuilder: (context, index) {
           final track = widget.tracks[index];
-          final isDownloaded = downloadedTrackIds.contains(track['trackName']);
+          final isDownloaded = downloadedTrackIds.contains(track.name);
           return ListTile(
-            title: Text('${track['trackName']} by ${track['artistName']}'),
+            title: Text('${track.name} by ${track.artists.first}'),
             trailing: isDownloaded
-                ? Icon(Icons.check, color: Colors.green)
+                ? const Icon(Icons.check, color: Colors.green)
                 : IconButton(
-                    icon: Icon(Icons.download),
+                    icon: const Icon(Icons.download),
                     onPressed: () => _downloadSong(track),
                   ),
           );
