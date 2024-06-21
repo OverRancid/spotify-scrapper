@@ -53,43 +53,40 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
       appBar: AppBar(
         title: Text(widget.playlistName),
         actions: [
-          TextButton(
+          IconButton(
+            icon: const Icon(Icons.download),
             onPressed: _downloadAllSongs,
-            child: Text(
-              'Download All',
-              style: TextStyle(color: Colors.black),
-            ),
           ),
         ],
       ),
       body: ListView.builder(
-        itemCount: widget.tracks.length,
-        itemBuilder: (context, index) {
-          final track = widget.tracks[index];
-          final isDownloaded = downloadedTrackIds.contains(track.name);
-          return ListTile(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(track.name),
-                Text(
-                  track.artists.join(', '),
-                  style: TextStyle(
-                    color: Colors.grey[600], // Lighter color for artist names
-                    fontSize: 14.0, // Smaller font size for artist names
-                  ),
-                ),
-              ],
+  itemCount: widget.tracks.length,
+  itemBuilder: (context, index) {
+    final track = widget.tracks[index];
+    final isDownloaded = downloadedTrackIds.contains(track.name);
+    return ListTile(
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(track.name),
+          Text(
+            track.artists.join(', '),
+            style: TextStyle(
+              color: Colors.grey[600], // Lighter color for artist names
+              fontSize: 14.0,          // Smaller font size for artist names
             ),
-            trailing: isDownloaded
-                ? const Icon(Icons.check, color: Colors.green)
-                : IconButton(
-                    icon: const Icon(Icons.download),
-                    onPressed: () => _downloadSong(track),
-                  ),
-          );
-        },
+          ),
+        ],
       ),
+      trailing: isDownloaded
+          ? const Icon(Icons.check, color: Colors.green)
+          : IconButton(
+              icon: const Icon(Icons.download),
+              onPressed: () => _downloadSong(track),
+            ),
+    );
+  },
+),
     );
   }
 }
