@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:spotify/fetch_songs.dart';
 import 'package:spotify/playlist_screen.dart';
-import 'package:spotify/downloaded_songs_screen.dart';
+import 'package:spotify/downlaoded_songs.dart';
+import 'package:spotify/song.dart';
+
 class MainScreen extends StatefulWidget {
   @override
   _MainScreenState createState() => _MainScreenState();
@@ -9,12 +11,9 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   final TextEditingController _playlistUrlController = TextEditingController();
-  final FetchSongs _fetchSongs = FetchSongs(
-    clientId: '50353b321b5746e4a13c0a6611e33ebd',  // Replace with your client ID
-    clientSecret: 'dbfa000a0932445e88b99ab639b879c5',  // Replace with your client secret
-  );
+  final FetchSongs _fetchSongs = FetchSongs();
 
-  List<Map<String, String>> downloadedSongs = [];
+  List<Song> downloadedSongs = [];
 
   @override
   void dispose() {
@@ -25,13 +24,15 @@ class _MainScreenState extends State<MainScreen> {
   void _fetchTracks() async {
     final playlistUrl = _playlistUrlController.text;
     try {
-      final playlistDetails = await _fetchSongs.fetchPlaylistDetails(playlistUrl);
+      final playlistDetails =
+          await _fetchSongs.fetchPlaylistDetails(playlistUrl);
       Navigator.push(
+        // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(
           builder: (context) => PlaylistScreen(
             playlistName: playlistDetails['playlistName'],
-            tracks: List<Map<String, String>>.from(playlistDetails['tracks']),
+            tracks: List<Song>.from(playlistDetails['tracks']),
             downloadedSongs: downloadedSongs,
           ),
         ),
@@ -45,7 +46,8 @@ class _MainScreenState extends State<MainScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => DownloadedSongsScreen(downloadedSongs: downloadedSongs),
+        builder: (context) =>
+            DownloadedSongsScreen(downloadedSongs: downloadedSongs),
       ),
     );
   }
@@ -57,7 +59,7 @@ class _MainScreenState extends State<MainScreen> {
         title: const Text('Spotify Playlist Reader'),
         actions: [
           IconButton(
-            icon: Icon(Icons.download),
+            icon: const Icon(Icons.download),
             onPressed: _navigateToDownloadedSongs,
           ),
         ],

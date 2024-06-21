@@ -1,15 +1,19 @@
-// spotify_service.dart
-
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:spotify/song.dart';
 
-class FetchSongs{
-  final String clientId;
-  final String clientSecret;
+class FetchSongs {
+  static String clientId = "50353b321b5746e4a13c0a6611e33ebd";
+  static String clientSecret = "dbfa000a0932445e88b99ab639b879c5";
 
-  FetchSongs({required this.clientId, required this.clientSecret});
+  FetchSongs();
 
   Future<String> getAccessToken() async {
+    //await dotenv.load(fileName: ".env");
+    print("clientID: $clientId");
+    print("clientSecret: $clientSecret");
+
     try {
       final String auth = base64Encode(utf8.encode('$clientId:$clientSecret'));
       final response = await http.post(
@@ -25,11 +29,15 @@ class FetchSongs{
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
+        print('Access token obtained successfully');
         return data['access_token'];
       } else {
+        print(
+            'Failed to obtain access token: ${response.statusCode} ${response.reasonPhrase}');
         throw Exception('Failed to obtain access token');
       }
     } catch (e) {
+      print('Exception during token request: $e');
       throw e;
     }
   }
@@ -51,11 +59,15 @@ class FetchSongs{
         final String playlistName = data['name'];
         final List<dynamic> tracks = data['tracks']['items'];
 
-        List<Map<String, String>> trackDetails = [];
+        List<Song> trackDetails = [];
         for (var trackItem in tracks) {
           final String trackName = trackItem['track']['name'];
-          final String artistName = trackItem['track']['artists'][0]['name'];
-          trackDetails.add({'trackName': trackName, 'artistName': artistName});
+          // final String artistName = trackItem['track']['artists'][0]['name'];
+          late List<String> artists = [];
+          for (var artist in trackItem['track']['artists']) {
+            artists.add(artist['name']);
+          }
+          trackDetails.add(Song(name: trackName, artists: artists));
         }
 
         return {
@@ -63,9 +75,11 @@ class FetchSongs{
           'tracks': trackDetails,
         };
       } else {
+        print('Error response: ${response.body}');
         throw Exception('Failed to fetch playlist details');
       }
     } catch (e) {
+      print('Exception during playlist details fetch: $e');
       throw e;
     }
   }
