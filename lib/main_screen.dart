@@ -1,54 +1,84 @@
 import 'package:flutter/material.dart';
 import 'package:spotify/fetch_songs.dart';
+import 'package:spotify/playlist_screen.dart';
+import 'package:spotify/downlaoded_songs.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
   @override
-  _MainScreen createState() => _MainScreen();
+  _MainScreenState createState() => _MainScreenState();
 }
 
-class _MainScreen extends State<MainScreen> {
-  final TextEditingController _textEditingController = TextEditingController();
+class _MainScreenState extends State<MainScreen> {
+  final TextEditingController _playlistUrlController = TextEditingController();
   final FetchSongs _fetchSongs = FetchSongs();
+
+  List<Map<String, String>> downloadedSongs = [];
 
   @override
   void dispose() {
-    _textEditingController.dispose();
+    _playlistUrlController.dispose();
     super.dispose();
   }
 
   void _fetchTracks() async {
-    final playlistUrl = _textEditingController.text;
+    final playlistUrl = _playlistUrlController.text;
     try {
-      await _fetchSongs.fetchAndPrintTracks(playlistUrl);
+      final playlistDetails =
+          await _fetchSongs.fetchPlaylistDetails(playlistUrl);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PlaylistScreen(
+            playlistName: playlistDetails['playlistName'],
+            tracks: List<Map<String, String>>.from(playlistDetails['tracks']),
+            downloadedSongs: downloadedSongs,
+          ),
+        ),
+      );
     } catch (e) {
-      print(e);
+      print('Error fetching tracks: $e');
     }
+  }
+
+  void _navigateToDownloadedSongs() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            DownloadedSongsScreen(downloadedSongs: downloadedSongs),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Spotifyyyyy')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _textEditingController,
-                decoration: const InputDecoration(
-                  hintText: 'Please enter the Spotify playlist link',
-                ),
-              ),
-              const SizedBox(height: 50),
-              ElevatedButton(
-                onPressed: _fetchTracks,
-                child: const Text("Generate"),
-              ),
-            ],
+      appBar: AppBar(
+        title: const Text('Spotify Playlist Reader'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: _navigateToDownloadedSongs,
           ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextField(
+              controller: _playlistUrlController,
+              decoration: const InputDecoration(
+                hintText: 'Please input the Spotify playlist URL',
+              ),
+            ),
+            const SizedBox(height: 20), // Space between TextField and Button
+            ElevatedButton(
+              onPressed: _fetchTracks,
+              child: const Text("Generate"),
+            ),
+          ],
         ),
       ),
     );
