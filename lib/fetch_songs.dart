@@ -1,13 +1,18 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class FetchSongs {
-  final String clientId;
-  final String clientSecret;
+  late String clientId = dotenv.env['client_id']!;
+  late String clientSecret = dotenv.env['client_secret']!;
 
-  FetchSongs({required this.clientId, required this.clientSecret});
+  FetchSongs();
 
   Future<String> getAccessToken() async {
+    await dotenv.load(fileName: ".env");
+    print("clientID: $clientId");
+    print("clientSecret: $clientSecret");
+
     try {
       final String auth = base64Encode(utf8.encode('$clientId:$clientSecret'));
       final response = await http.post(
@@ -26,7 +31,8 @@ class FetchSongs {
         print('Access token obtained successfully');
         return data['access_token'];
       } else {
-        print('Failed to obtain access token: ${response.statusCode} ${response.reasonPhrase}');
+        print(
+            'Failed to obtain access token: ${response.statusCode} ${response.reasonPhrase}');
         throw Exception('Failed to obtain access token');
       }
     } catch (e) {
@@ -56,7 +62,8 @@ class FetchSongs {
           print('Track: $trackName');
         }
       } else {
-        print('Failed to fetch playlist tracks: ${response.statusCode} ${response.reasonPhrase}');
+        print(
+            'Failed to fetch playlist tracks: ${response.statusCode} ${response.reasonPhrase}');
         throw Exception('Failed to fetch playlist tracks');
       }
     } catch (e) {

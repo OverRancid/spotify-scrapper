@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spotify/fetch_songs.dart';
+
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
   @override
@@ -8,14 +9,11 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreen extends State<MainScreen> {
   final TextEditingController _textEditingController = TextEditingController();
-  final FetchSongs _fetchSongs = FetchSongs(
-    clientId: '',  
-    clientSecret: '',
-  );
+  final FetchSongs _fetchSongs = FetchSongs();
 
   @override
   void dispose() {
-    _textEditingController.dispose(); 
+    _textEditingController.dispose();
     super.dispose();
   }
 
@@ -27,6 +25,7 @@ class _MainScreen extends State<MainScreen> {
       print(e);
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,7 +42,7 @@ class _MainScreen extends State<MainScreen> {
                   hintText: 'Please enter the Spotify playlist link',
                 ),
               ),
-              const SizedBox(height: 50), 
+              const SizedBox(height: 50),
               ElevatedButton(
                 onPressed: _fetchTracks,
                 child: const Text("Generate"),
