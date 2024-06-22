@@ -5,7 +5,9 @@ import 'package:spotify/song.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
-
+import 'package:spotify/database_helper.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 class PlaylistScreen extends StatefulWidget {
   final String playlistName;
   final List<Song> tracks;
@@ -73,8 +75,22 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
 
       //implement file saving logic here
       //  await stream.pipe(audioStream);
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = path.join(directory.path, '${track.name}.mp3');
+      final file = File(filePath);
+      await file.create(recursive: true);
+      final fileSink = file.openWrite();
+
+      await audioStream.pipe(fileSink);
+      await fileSink.flush();
+      await fileSink.close();
 
       ytExplode.close();
+
+
+      // Save song data to database
+      final dbHelper = DatabaseHelper();
+      await dbHelper.insertSong(track);
     } catch (e) {
       print('Error in ytExplode: $e');
       throw e;
