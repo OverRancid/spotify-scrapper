@@ -1,19 +1,22 @@
 import 'dart:io';
 import 'dart:convert';
+
+import 'package:spotify/song.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:spotify/database_helper.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
-import 'package:spotify/song.dart';
-import 'package:spotify/database_helper.dart';
+
 
 class PlaylistScreen extends StatefulWidget {
   final String playlistName;
   final List<Song> tracks;
 
-  PlaylistScreen({
+  const PlaylistScreen({
+    super.key,
     required this.playlistName,
     required this.tracks,
   });
@@ -52,8 +55,6 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
     setState(() {
       downloadStatus[_createSongId(track)] = true; // Set download in progress
     });
-
-    String videoID = '';
     try {
       final String q = '${track.name} ${track.artists.first}';
       final Map<String, String> parameters = {
@@ -70,19 +71,19 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
       var response = await http.get(uri, headers: headers);
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
-        videoID = data['items'][0]['id']['videoId'];
-        print(videoID);
+        track.ytID = data['items'][0]['id']['videoId'];
       } else {
         throw json.decode(response.body)['error']['message'];
       }
     } catch (e) {
-      print('Error in youtubeAPI: $e');
-      throw e;
+      // print('Error in youtubeAPI: $e');
+      rethrow;
     }
 
     try {
       var ytExplode = YoutubeExplode();
-      var manifest = await ytExplode.videos.streamsClient.getManifest(videoID);
+      var manifest =
+          await ytExplode.videos.streamsClient.getManifest(track.ytID);
       var streamInfo = manifest.audioOnly.withHighestBitrate();
       var audioStream = ytExplode.videos.streamsClient.get(streamInfo);
 
@@ -102,8 +103,8 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
       final dbHelper = DatabaseHelper();
       await dbHelper.insertSong(track);
     } catch (e) {
-      print('Error in ytExplode: $e');
-      throw e;
+      // print('Error in ytExplode: $e');
+      rethrow;
     }
 
     setState(() {
@@ -143,19 +144,22 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
           final track = widget.tracks[index];
           final isDownloaded = downloadedTrackIds.contains(_createSongId(track));
           final bool isDownloading = downloadStatus[_createSongId(track)] ?? false;
-
           return ListTile(
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(track.name),
-                Text(
-                  track.artists.join(', '),
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14.0,
-                  ),
-                ),
+                SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Text(
+                      track.artists.join(', '),
+                      maxLines: 1,
+                      style: TextStyle(
+                        color:
+                            Colors.grey[600], // Lighter color for artist names
+                        fontSize: 12.0, // Smaller font size for artist names
+                      ),
+                    )),
               ],
             ),
             trailing: isDownloaded

@@ -4,7 +4,13 @@ import 'package:spotify/song.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+<<<<<<< HEAD
+
+import 'database_helper.dart';
+import 'dart:io';
+=======
 import 'package:spotify/database_helper.dart';
+>>>>>>> 759d20291e9bb9bb7c3a16b2f708d3774dc9d0e8
 
 class DownloadedSongsScreen extends StatefulWidget {
   @override
