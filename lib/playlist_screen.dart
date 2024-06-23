@@ -132,7 +132,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
             onPressed: _downloadAllSongs,
             child: const Text(
               'Download All',
-              style: TextStyle(color: Colors.black),
+              //style: TextStyle(color: ),
             ),
           ),
         ],
@@ -173,9 +173,9 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
               ),
             ),
             trailing: isDownloaded
-                ? Icon(Icons.check, color: Colors.green)
+                ? const Icon(Icons.check, color: Colors.green)
                 : isDownloading
-                    ? SizedBox(
+                    ? const SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator())
