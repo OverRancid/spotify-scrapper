@@ -133,13 +133,17 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(track.name),
-                Text(
-                  track.artists.join(', '),
-                  style: TextStyle(
-                    color: Colors.grey[600], // Lighter color for artist names
-                    fontSize: 14.0, // Smaller font size for artist names
-                  ),
-                ),
+                SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Text(
+                      track.artists.join(', '),
+                      maxLines: 1,
+                      style: TextStyle(
+                        color:
+                            Colors.grey[600], // Lighter color for artist names
+                        fontSize: 12.0, // Smaller font size for artist names
+                      ),
+                    )),
               ],
             ),
             trailing: isDownloaded
