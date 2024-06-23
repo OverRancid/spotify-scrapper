@@ -206,13 +206,19 @@ class _DownloadedSongsScreenState extends State<DownloadedSongsScreen> {
                         fontWeight: isPlayingTrack
                             ? FontWeight.bold
                             : FontWeight.normal,
-                        color: isPlayingTrack ? Colors.blue : Colors.black,
+                        color: isPlayingTrack
+                            ? Theme.of(context)
+                                .colorScheme
+                                .primary // Use primary color for isPlayingTrack
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     subtitle: Text(
                       track.artists.join(', '),
                       style: TextStyle(
-                        color: isPlayingTrack ? Colors.blue : Colors.black54,
+                        color: isPlayingTrack
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     trailing: Row(
