@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+
 import 'package:spotify/song.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -8,6 +9,7 @@ import 'package:spotify/database_helper.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+
 
 class PlaylistScreen extends StatefulWidget {
   final String playlistName;
@@ -28,6 +30,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
   List<Song> downloadedSongs = [];
   static String ytKey = dotenv.env['youtube_key']!;
   final String _baseURL = 'www.googleapis.com';
+  Map<String, bool> downloadStatus = {}; // Track download status for each song
 
   @override
   void initState() {
@@ -49,6 +52,9 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
   }
 
   Future<void> _downloadSong(Song track) async {
+    setState(() {
+      downloadStatus[_createSongId(track)] = true; // Set download in progress
+    });
     try {
       final String q = '${track.name} ${track.artists.first}';
       final Map<String, String> parameters = {
@@ -73,6 +79,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
       // print('Error in youtubeAPI: $e');
       rethrow;
     }
+
     try {
       var ytExplode = YoutubeExplode();
       var manifest =
@@ -99,7 +106,9 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
       // print('Error in ytExplode: $e');
       rethrow;
     }
+
     setState(() {
+      downloadStatus[_createSongId(track)] = false; // Set download complete
       downloadedTrackIds.add(_createSongId(track));
       downloadedSongs.add(track);
     });
@@ -124,7 +133,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
             onPressed: _downloadAllSongs,
             child: const Text(
               'Download All',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: Colors.black),
             ),
           ),
         ],
@@ -133,8 +142,8 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
         itemCount: widget.tracks.length,
         itemBuilder: (context, index) {
           final track = widget.tracks[index];
-          final isDownloaded =
-              downloadedTrackIds.contains(_createSongId(track));
+          final isDownloaded = downloadedTrackIds.contains(_createSongId(track));
+          final bool isDownloading = downloadStatus[_createSongId(track)] ?? false;
           return ListTile(
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,11 +163,13 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
               ],
             ),
             trailing: isDownloaded
-                ? const Icon(Icons.check, color: Colors.green)
-                : IconButton(
-                    icon: const Icon(Icons.download),
-                    onPressed: () => _downloadSong(track),
-                  ),
+                ? Icon(Icons.check, color: Colors.green)
+                : isDownloading
+                    ? CircularProgressIndicator()
+                    : IconButton(
+                        icon: Icon(Icons.download),
+                        onPressed: () => _downloadSong(track),
+                      ),
           );
         },
       ),

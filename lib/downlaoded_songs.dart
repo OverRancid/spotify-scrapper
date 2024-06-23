@@ -29,7 +29,6 @@ class _DownloadedSongsScreenState extends State<DownloadedSongsScreen> {
     super.initState();
     _loadDownloadedSongs();
 
-    // Listen for the state change event to play the next song when the current one finishes
     _audioPlayer.onPlayerStateChanged.listen((state) {
       if (state == PlayerState.completed) {
         _playNextSong();
@@ -42,6 +41,10 @@ class _DownloadedSongsScreenState extends State<DownloadedSongsScreen> {
           isPlaying = false;
         });
       }
+    });
+
+    _audioPlayer.onPlayerComplete.listen((event) {
+      _onSongComplete();
     });
   }
 
@@ -78,6 +81,11 @@ class _DownloadedSongsScreenState extends State<DownloadedSongsScreen> {
       final nextIndex = currentlyPlayingIndex! + 1;
       final track = downloadedSongs[nextIndex];
       _playSongFromIndex(nextIndex, track);
+    } else {
+      setState(() {
+        currentlyPlayingIndex = null;
+        isPlaying = false;
+      });
     }
   }
 
@@ -91,29 +99,56 @@ class _DownloadedSongsScreenState extends State<DownloadedSongsScreen> {
     }
   }
 
-  void _deleteSong(int index) async {
-    final song = downloadedSongs[index];
-    final directory = await getApplicationDocumentsDirectory();
-    final filePath = path.join(directory.path, _createSongId(song) + '.mp3');
-    final file = File(filePath);
-
-    if (await file.exists()) {
-      await file.delete();
-    }
-
-    setState(() {
-      downloadedSongs.removeAt(index);
-      downloadedSongIds.remove(_createSongId(song));
-      if (currentlyPlayingIndex == index) {
+  void _onSongComplete() {
+    if (currentlyPlayingIndex != null &&
+        currentlyPlayingIndex! < downloadedSongs.length - 1) {
+      _playNextSong();
+    } else {
+      setState(() {
         currentlyPlayingIndex = null;
-        isPlaying = false; // Ensure playback stops if the current song is deleted
-      } else if (currentlyPlayingIndex != null && currentlyPlayingIndex! > index) {
-        currentlyPlayingIndex = currentlyPlayingIndex! - 1;
-      }
-    });
-
-    await DatabaseHelper().deleteSong(_createSongId(song)); // Delete from the database using the song's unique ID
+        isPlaying = false;
+      });
+    }
   }
+
+  void _deleteSong(int index) async {
+  final song = downloadedSongs[index];
+  final directory = await getApplicationDocumentsDirectory();
+  final filePath = path.join(directory.path, _createSongId(song) + '.mp3');
+  final file = File(filePath);
+
+  // Stop playing the song if it is currently playing
+  if (currentlyPlayingIndex == index) {
+    await _audioPlayer.stop();
+    setState(() {
+      currentlyPlayingIndex = null;
+      isPlaying = false;
+    });
+  }
+  
+  if (await file.exists()) {
+    await file.delete();
+  }
+
+  setState(() {
+    downloadedSongs.removeAt(index);
+    downloadedSongIds.remove(_createSongId(song));
+    if (currentlyPlayingIndex == index) {
+      currentlyPlayingIndex = null;
+      isPlaying = false;
+    } else if (currentlyPlayingIndex != null && currentlyPlayingIndex! > index) {
+      currentlyPlayingIndex = currentlyPlayingIndex! - 1;
+    }
+  });
+
+  try {
+    await DatabaseHelper().deleteSongByIndex(index);
+  } catch (e) {
+    print('Error deleting song from database: $e');
+    // Handle error as needed
+  }
+}
+
 
   Future<void> _pauseResumeSong() async {
     if (isPlaying) {
@@ -141,9 +176,16 @@ class _DownloadedSongsScreenState extends State<DownloadedSongsScreen> {
       appBar: AppBar(
         title: const Text('Downloaded Songs'),
       ),
-      body: ListView.builder(
-        itemCount: downloadedSongs.length,
-        itemBuilder: (context, index) {
+      body: downloadedSongs.isEmpty
+          ? const Center(
+              child: Text(
+                'Download songs to play',
+                style: TextStyle(fontSize: 18.0),
+              ),
+            )
+          : ListView.builder(
+              itemCount: downloadedSongs.length,
+              itemBuilder: (context, index) {
           final track = downloadedSongs[index];
           final isPlayingTrack = index == currentlyPlayingIndex;
           return Dismissible(
