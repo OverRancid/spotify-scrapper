@@ -51,4 +51,16 @@ class DatabaseHelper {
     final db = await database;
     await db.delete('songs', where: 'name = ?', whereArgs: [name]);
   }
+
+  Future<void> deleteSongByIndex(int index) async {
+    final db = await database;
+    final List<Song> songs = await getSongs();
+    
+    if (index >= 0 && index < songs.length) {
+      final Song songToDelete = songs[index];
+      await db.delete('songs', where: 'name = ?', whereArgs: [songToDelete.name]);
+    } else {
+      throw Exception('Index out of bounds');
+    }
+  }
 }
