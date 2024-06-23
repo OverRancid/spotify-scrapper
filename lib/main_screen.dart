@@ -46,8 +46,7 @@ class _MainScreenState extends State<MainScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            DownloadedSongsScreen(),
+        builder: (context) => DownloadedSongsScreen(),
       ),
     );
   }
@@ -72,13 +71,13 @@ class _MainScreenState extends State<MainScreen> {
             TextField(
               controller: _playlistUrlController,
               decoration: const InputDecoration(
-                hintText: 'Please input the Spotify playlist URL',
+                hintText: 'Please Enter the Spotify Playlist URL',
               ),
             ),
             const SizedBox(height: 20), // Space between TextField and Button
             ElevatedButton(
               onPressed: _fetchTracks,
-              child: const Text("Generate"),
+              child: const Text("Submit"),
             ),
           ],
         ),

@@ -11,10 +11,6 @@ class FetchSongs {
 
   Future<String> getAccessToken() async {
     await dotenv.load(fileName: ".env");
-
-    print("clientID: $clientId");
-    print("clientSecret: $clientSecret");
-
     try {
       final String auth = base64Encode(utf8.encode('$clientId:$clientSecret'));
       final response = await http.post(
@@ -59,15 +55,17 @@ class FetchSongs {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final String playlistName = data['name'];
         final List<dynamic> tracks = data['tracks']['items'];
-
         List<Song> trackDetails = [];
         for (var trackItem in tracks) {
           final String trackName = trackItem['track']['name'];
+          final String trackImage =
+              trackItem['track']['album']['images'][0]['url'];
           late List<String> artists = [];
           for (var artist in trackItem['track']['artists']) {
             artists.add(artist['name']);
           }
-          trackDetails.add(Song(name: trackName, artists: artists));
+          trackDetails
+              .add(Song(name: trackName, artists: artists, image: trackImage));
         }
 
         return {

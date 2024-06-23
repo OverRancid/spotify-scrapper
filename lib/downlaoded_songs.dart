@@ -17,37 +17,42 @@ class _DownloadedSongsScreenState extends State<DownloadedSongsScreen> {
   Set<String> downloadedSongIds = {};
   int? currentlyPlayingIndex;
   bool isPlaying = false;
+  bool _isMounted = false; // Flag to track whether the widget is mounted
 
   @override
   void initState() {
     super.initState();
+    _isMounted = true; // Set _isMounted to true when widget is mounted
     _loadDownloadedSongs();
 
+    // Listen for the state change event to play the next song when the current one finishes
     _audioPlayer.onPlayerStateChanged.listen((state) {
-      if (state == PlayerState.completed) {
-        _playNextSong();
-      } else if (state == PlayerState.playing) {
-        setState(() {
-          isPlaying = true;
-        });
-      } else {
-        setState(() {
-          isPlaying = false;
-        });
+      if (_isMounted) {
+        // Check _isMounted before calling setState
+        if (state == PlayerState.completed) {
+          _playNextSong();
+        } else if (state == PlayerState.playing) {
+          setState(() {
+            isPlaying = true;
+          });
+        } else {
+          setState(() {
+            isPlaying = false;
+          });
+        }
       }
-    });
-
-    _audioPlayer.onPlayerComplete.listen((event) {
-      _onSongComplete();
     });
   }
 
   Future<void> _loadDownloadedSongs() async {
     final songs = await DatabaseHelper().getSongs();
-    setState(() {
-      downloadedSongs = songs;
-      downloadedSongIds = songs.map((song) => _createSongId(song)).toSet();
-    });
+    if (_isMounted) {
+      // Check _isMounted before calling setState
+      setState(() {
+        downloadedSongs = songs;
+        downloadedSongIds = songs.map((track) => _createSongId(track)).toSet();
+      });
+    }
   }
 
   String _createSongId(Song song) {
@@ -56,111 +61,109 @@ class _DownloadedSongsScreenState extends State<DownloadedSongsScreen> {
 
   Future<void> _playSong(String filePath, int index) async {
     try {
-      if (currentlyPlayingIndex != null) {
-        await _audioPlayer.stop();
+      if (_isMounted) {
+        // Check _isMounted before calling setState
+        if (currentlyPlayingIndex != null) {
+          await _audioPlayer.stop();
+        }
+        await _audioPlayer.play(DeviceFileSource(filePath));
+        setState(() {
+          currentlyPlayingIndex = index;
+          isPlaying = true;
+        });
       }
-      await _audioPlayer.play(DeviceFileSource(filePath));
-      setState(() {
-        currentlyPlayingIndex = index;
-        isPlaying = true;
-      });
     } catch (e) {
       print('Error playing song: $e');
     }
   }
 
   void _playNextSong() {
-    if (currentlyPlayingIndex != null &&
-        currentlyPlayingIndex! < downloadedSongs.length - 1) {
-      final nextIndex = currentlyPlayingIndex! + 1;
-      final track = downloadedSongs[nextIndex];
-      _playSongFromIndex(nextIndex, track);
-    } else {
-      setState(() {
-        currentlyPlayingIndex = null;
-        isPlaying = false;
-      });
+    if (_isMounted) {
+      // Check _isMounted before calling setState
+      if (currentlyPlayingIndex != null &&
+          currentlyPlayingIndex! < downloadedSongs.length - 1) {
+        final nextIndex = currentlyPlayingIndex! + 1;
+        final track = downloadedSongs[nextIndex];
+        _playSongFromIndex(nextIndex, track);
+      }
     }
   }
 
   Future<void> _playSongFromIndex(int index, Song track) async {
     final directory = await getApplicationDocumentsDirectory();
     final filePath = path.join(directory.path, _createSongId(track) + '.mp3');
-    if (await File(filePath).exists()) {
-      await _playSong(filePath, index);
-    } else {
-      print('File not found: $filePath');
-    }
-  }
-
-  void _onSongComplete() {
-    if (currentlyPlayingIndex != null &&
-        currentlyPlayingIndex! < downloadedSongs.length - 1) {
-      _playNextSong();
-    } else {
-      setState(() {
-        currentlyPlayingIndex = null;
-        isPlaying = false;
-      });
+    if (_isMounted) {
+      // Check _isMounted before calling setState
+      if (await File(filePath).exists()) {
+        await _playSong(filePath, index);
+      } else {
+        print('File not found: $filePath');
+      }
     }
   }
 
   void _deleteSong(int index) async {
-  final song = downloadedSongs[index];
-  final directory = await getApplicationDocumentsDirectory();
-  final filePath = path.join(directory.path, _createSongId(song) + '.mp3');
-  final file = File(filePath);
+    if (_isMounted) {
+      // Check _isMounted before calling setState
+      final song = downloadedSongs[index];
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = path.join(directory.path, _createSongId(song) + '.mp3');
+      final file = File(filePath);
 
-  // Stop playing the song if it is currently playing
-  if (currentlyPlayingIndex == index) {
-    await _audioPlayer.stop();
-    setState(() {
-      currentlyPlayingIndex = null;
-      isPlaying = false;
-    });
-  }
-  
-  if (await file.exists()) {
-    await file.delete();
-  }
+      if (await file.exists()) {
+        await file.delete();
+      }
 
-  setState(() {
-    downloadedSongs.removeAt(index);
-    downloadedSongIds.remove(_createSongId(song));
-    if (currentlyPlayingIndex == index) {
-      currentlyPlayingIndex = null;
-      isPlaying = false;
-    } else if (currentlyPlayingIndex != null && currentlyPlayingIndex! > index) {
-      currentlyPlayingIndex = currentlyPlayingIndex! - 1;
+      setState(() {
+        downloadedSongs.removeAt(index);
+        downloadedSongIds.remove(_createSongId(song));
+        if (currentlyPlayingIndex == index) {
+          currentlyPlayingIndex = null;
+          isPlaying = false; // Stop playing when deleting the current song
+        } else if (currentlyPlayingIndex != null &&
+            currentlyPlayingIndex! > index) {
+          currentlyPlayingIndex = currentlyPlayingIndex! - 1;
+        }
+      });
+
+      await DatabaseHelper().deleteSongByIndex(index);
     }
-  });
-
-  try {
-    await DatabaseHelper().deleteSongByIndex(index);
-  } catch (e) {
-    print('Error deleting song from database: $e');
-    // Handle error as needed
   }
-}
-
 
   Future<void> _pauseResumeSong() async {
-    if (isPlaying) {
-      await _audioPlayer.pause();
-      setState(() {
-        isPlaying = false;
-      });
-    } else {
-      await _audioPlayer.resume();
-      setState(() {
-        isPlaying = true;
-      });
+    if (_isMounted) {
+      // Check _isMounted before calling setState
+      if (isPlaying) {
+        await _audioPlayer.pause();
+        setState(() {
+          isPlaying = false;
+        });
+      } else {
+        await _audioPlayer.resume();
+        setState(() {
+          isPlaying = true;
+        });
+      }
     }
+  }
+
+  void _rewindSong() async {
+    final currentPosition = await _audioPlayer.getCurrentPosition();
+    final seekTo = currentPosition! - Duration(seconds: 10);
+    await _audioPlayer.seek(seekTo < Duration.zero ? Duration.zero : seekTo);
+  }
+
+  void _forwardSong() async {
+    final currentPosition = await _audioPlayer.getCurrentPosition();
+    final totalDuration = await _audioPlayer.getDuration();
+    final seekTo = currentPosition! + Duration(seconds: 10);
+    await _audioPlayer.seek(seekTo > totalDuration! ? totalDuration : seekTo);
   }
 
   @override
   void dispose() {
     _audioPlayer.dispose();
+    _isMounted = false; // Set _isMounted to false when disposing the widget
     super.dispose();
   }
 
@@ -170,60 +173,79 @@ class _DownloadedSongsScreenState extends State<DownloadedSongsScreen> {
       appBar: AppBar(
         title: const Text('Downloaded Songs'),
       ),
-      body: downloadedSongs.isEmpty
-          ? const Center(
-              child: Text(
-                'Download songs to play',
-                style: TextStyle(fontSize: 18.0),
-              ),
+      body: downloadedSongs.isEmpty && _isMounted
+          ? Center(
+              child: Text('Download songs to play'),
             )
           : ListView.builder(
               itemCount: downloadedSongs.length,
               itemBuilder: (context, index) {
-          final track = downloadedSongs[index];
-          final isPlayingTrack = index == currentlyPlayingIndex;
-          return Dismissible(
-            key: Key(_createSongId(track)),
-            direction: DismissDirection.endToStart,
-            onDismissed: (direction) {
-              _deleteSong(index);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${track.name} deleted')),
-              );
-            },
-            background: Container(
-              color: Colors.red,
-              alignment: Alignment.centerRight,
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Icon(Icons.delete, color: Colors.white),
-            ),
-            child: ListTile(
-              title: Text(
-                track.name,
-                style: TextStyle(
-                  fontWeight: isPlayingTrack ? FontWeight.bold : FontWeight.normal,
-                  color: isPlayingTrack ? Colors.blue : Colors.black,
-                ),
-              ),
-              subtitle: Text(
-                track.artists.join(', '),
-                style: TextStyle(
-                  color: isPlayingTrack ? Colors.blue : Colors.black54,
-                ),
-              ),
-              trailing: isPlayingTrack
-                  ? IconButton(
-                      icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-                      onPressed: _pauseResumeSong,
-                    )
-                  : null,
-              onTap: () async {
-                await _playSongFromIndex(index, track);
+                final track = downloadedSongs[index];
+                final isPlayingTrack = index == currentlyPlayingIndex;
+                return Dismissible(
+                  key: Key(_createSongId(track)),
+                  direction: DismissDirection.horizontal,
+                  background:
+                      Container(), // Empty Container to remove background
+                  secondaryBackground:
+                      Container(), // Empty Container to remove secondary background
+                  onDismissed: (direction) {
+                    if (direction == DismissDirection.endToStart) {
+                      _deleteSong(index);
+                      // Swiped from right to left (checkmark), handle accordingly
+                      // For example, mark song as completed or handle completion logic
+                    } else if (direction == DismissDirection.startToEnd) {
+                      // Swiped from left to right (delete), handle deletion
+                      _deleteSong(index);
+                    }
+                  },
+                  child: ListTile(
+                    title: Text(
+                      track.name,
+                      style: TextStyle(
+                        fontWeight: isPlayingTrack
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color: isPlayingTrack ? Colors.blue : Colors.black,
+                      ),
+                    ),
+                    subtitle: Text(
+                      track.artists.join(', '),
+                      style: TextStyle(
+                        color: isPlayingTrack ? Colors.blue : Colors.black54,
+                      ),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isPlayingTrack)
+                          IconButton(
+                            icon: Icon(Icons.replay_10),
+                            iconSize: 36,
+                            onPressed: _rewindSong,
+                          ),
+                        if (isPlayingTrack)
+                          IconButton(
+                            icon: Icon(
+                                isPlaying ? Icons.pause : Icons.play_arrow),
+                            iconSize: 36,
+                            onPressed: _pauseResumeSong,
+                          ),
+                        if (isPlayingTrack)
+                          IconButton(
+                            icon: Icon(Icons.forward_10),
+                            iconSize: 36,
+                            onPressed: _forwardSong,
+                          ),
+                      ],
+                    ),
+                    onTap: () async {
+                      await _playSongFromIndex(index, track);
+                    },
+                  ),
+                );
               },
             ),
-          );
-        },
-      ),
     );
   }
 }

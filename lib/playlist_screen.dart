@@ -53,7 +53,6 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
       downloadStatus[_createSongId(track)] = true; // Set download in progress
     });
 
-    String videoID = '';
     try {
       final String q = '${track.name} ${track.artists.first}';
       final Map<String, String> parameters = {
@@ -70,8 +69,8 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
       var response = await http.get(uri, headers: headers);
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
-        videoID = data['items'][0]['id']['videoId'];
-        print(videoID);
+        track.ytID = data['items'][0]['id']['videoId'];
+        // print(track.ytID);
       } else {
         throw json.decode(response.body)['error']['message'];
       }
@@ -82,7 +81,8 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
 
     try {
       var ytExplode = YoutubeExplode();
-      var manifest = await ytExplode.videos.streamsClient.getManifest(videoID);
+      var manifest =
+          await ytExplode.videos.streamsClient.getManifest(track.ytID);
       var streamInfo = manifest.audioOnly.withHighestBitrate();
       var audioStream = ytExplode.videos.streamsClient.get(streamInfo);
 
@@ -141,27 +141,44 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
         itemCount: widget.tracks.length,
         itemBuilder: (context, index) {
           final track = widget.tracks[index];
-          final isDownloaded = downloadedTrackIds.contains(_createSongId(track));
-          final bool isDownloading = downloadStatus[_createSongId(track)] ?? false;
+          final isDownloaded =
+              downloadedTrackIds.contains(_createSongId(track));
+          final bool isDownloading =
+              downloadStatus[_createSongId(track)] ?? false;
 
           return ListTile(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(track.name),
-                Text(
-                  track.artists.join(', '),
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14.0,
+            leading: Image(
+              image: Image.network(track.image).image,
+              height: 50,
+              width: 50,
+            ),
+            title: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    track.name,
+                    maxLines: 1,
                   ),
-                ),
-              ],
+                  Text(
+                    track.artists.join(', '),
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14.0,
+                    ),
+                    maxLines: 1,
+                  ),
+                ],
+              ),
             ),
             trailing: isDownloaded
                 ? Icon(Icons.check, color: Colors.green)
                 : isDownloading
-                    ? CircularProgressIndicator()
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator())
                     : IconButton(
                         icon: Icon(Icons.download),
                         onPressed: () => _downloadSong(track),
