@@ -33,7 +33,7 @@ class _MainScreenState extends State<MainScreen> {
           builder: (context) => PlaylistScreen(
             playlistName: playlistDetails['playlistName'],
             tracks: List<Song>.from(playlistDetails['tracks']),
-            downloadedSongs: downloadedSongs,
+            //downloadedSongs: downloadedSongs,
           ),
         ),
       );
