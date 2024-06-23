@@ -3,19 +3,32 @@ import 'package:spotify/song.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'database_helper.dart';
+import 'dart:io';
+
 class DownloadedSongsScreen extends StatefulWidget {
-  final List<Song> downloadedSongs;
-
-  DownloadedSongsScreen({required this.downloadedSongs});
-
   @override
   _DownloadedSongsScreenState createState() => _DownloadedSongsScreenState();
 }
 
 class _DownloadedSongsScreenState extends State<DownloadedSongsScreen> {
   AudioPlayer _audioPlayer = AudioPlayer();
+  List<Song> downloadedSongs = [];
 
-   void _playSong(String filePath) async {
+  @override
+  void initState() {
+    super.initState();
+    _loadDownloadedSongs();
+  }
+
+  Future<void> _loadDownloadedSongs() async {
+    final songs = await DatabaseHelper().getSongs();
+    setState(() {
+      downloadedSongs = songs;
+    });
+  }
+
+  void _playSong(String filePath) async {
     try {
       await _audioPlayer.play(DeviceFileSource(filePath));
     } catch (e) {
@@ -23,10 +36,21 @@ class _DownloadedSongsScreenState extends State<DownloadedSongsScreen> {
     }
   }
 
-  void _deleteSong(int index) {
+  void _deleteSong(int index) async {
+    final song = downloadedSongs[index];
+    final directory = await getApplicationDocumentsDirectory();
+    final filePath = path.join(directory.path, '${song.name}.mp3');
+    final file = File(filePath);
+
+    if (await file.exists()) {
+      await file.delete();
+    }
+
     setState(() {
-      widget.downloadedSongs.removeAt(index);
+      downloadedSongs.removeAt(index);
     });
+
+    await DatabaseHelper().deleteSong(song.name);
   }
 
   @override
@@ -36,9 +60,9 @@ class _DownloadedSongsScreenState extends State<DownloadedSongsScreen> {
         title: const Text('Downloaded Songs'),
       ),
       body: ListView.builder(
-        itemCount: widget.downloadedSongs.length,
+        itemCount: downloadedSongs.length,
         itemBuilder: (context, index) {
-          final track = widget.downloadedSongs[index];
+          final track = downloadedSongs[index];
           return ListTile(
             title: Text('${track.name}'),
             subtitle: Text('${track.artists.join(', ')}'),
