@@ -1,19 +1,21 @@
 import 'dart:io';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:spotify/song.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as path;
 import 'package:spotify/database_helper.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+
 class PlaylistScreen extends StatefulWidget {
   final String playlistName;
   final List<Song> tracks;
   final List<Song> downloadedSongs;
 
-  PlaylistScreen({
+  const PlaylistScreen({
+    super.key,
     required this.playlistName,
     required this.tracks,
     required this.downloadedSongs,
@@ -27,7 +29,6 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
   Set<String> downloadedTrackIds = {};
   static String ytKey = dotenv.env['youtube_key']!;
   final String _baseURL = 'www.googleapis.com';
-  String token = '';
 
   @override
   void initState() {
@@ -38,7 +39,6 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
   }
 
   Future _downloadSong(Song track) async {
-    String videoID = '';
     try {
       final String q = '${track.name} ${track.artists.first}';
       final Map<String, String> parameters = {
@@ -55,28 +55,28 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
       var response = await http.get(uri, headers: headers);
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
-        videoID = data['items'][0]['id']['videoId'];
-        print(videoID);
+        track.ytID = data['items'][0]['id']['videoId'];
       } else {
         throw json.decode(response.body)['error']['message'];
       }
     } catch (e) {
-      print('Error in youtubeAPI: $e');
-      throw e;
+      // print('Error in youtubeAPI: $e');
+      rethrow;
     }
     try {
       var ytExplode = YoutubeExplode();
-      // var video = await ytExplode.videos.get(videoID);
-      var manifest = await ytExplode.videos.streamsClient.getManifest(videoID);
+      var manifest =
+          await ytExplode.videos.streamsClient.getManifest(track.ytID);
       var streamInfo = manifest.audioOnly.withHighestBitrate();
       var audioStream = ytExplode.videos.streamsClient.get(streamInfo);
 
-      print("success");
-
       //implement file saving logic here
       //  await stream.pipe(audioStream);
+
       final directory = await getApplicationDocumentsDirectory();
+      print(directory);
       final filePath = path.join(directory.path, '${track.name}.mp3');
+      print(filePath);
       final file = File(filePath);
       await file.create(recursive: true);
       final fileSink = file.openWrite();
@@ -87,13 +87,12 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
 
       ytExplode.close();
 
-
       // Save song data to database
       final dbHelper = DatabaseHelper();
       await dbHelper.insertSong(track);
     } catch (e) {
-      print('Error in ytExplode: $e');
-      throw e;
+      // print('Error in ytExplode: $e');
+      rethrow;
     }
     setState(() {
       downloadedTrackIds.add(track.name);

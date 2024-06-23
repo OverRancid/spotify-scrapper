@@ -75,12 +75,12 @@ class FetchSongs {
           'tracks': trackDetails,
         };
       } else {
-        print('Error response: ${response.body}');
+        print('Error ${response.statusCode}: ${response.body}');
         throw Exception('Failed to fetch playlist details');
       }
     } catch (e) {
       print('Exception during playlist details fetch: $e');
-      throw e;
+      rethrow;
     }
   }
 

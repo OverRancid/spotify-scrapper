@@ -3,6 +3,7 @@ import 'package:spotify/song.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+
 class DownloadedSongsScreen extends StatefulWidget {
   final List<Song> downloadedSongs;
 
@@ -15,7 +16,7 @@ class DownloadedSongsScreen extends StatefulWidget {
 class _DownloadedSongsScreenState extends State<DownloadedSongsScreen> {
   AudioPlayer _audioPlayer = AudioPlayer();
 
-   void _playSong(String filePath) async {
+  void _playSong(String filePath) async {
     try {
       await _audioPlayer.play(DeviceFileSource(filePath));
     } catch (e) {
