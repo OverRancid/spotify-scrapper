@@ -1,16 +1,27 @@
-# spotify
+# Spotify Scrapper
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A new Flutter project.
+Music downloader and player application built using Dart (Flutter).
 
-## Getting Started
+## Installation 
 
-This project is a starting point for a Flutter application.
+### Direct Download (Android)
 
-A few resources to get you started if this is your first Flutter project:
+The APK file for the application can be found [here](https://drive.google.com/file/d/16cBY-JGYyjVGf-AMfEsnRRupMIDwWv1M/), which can be installed on any android device / emulator.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### Using Flutter 
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```shell
+git clone https://github.com/OverRancid/spotify-scrapper
+cd spotify-scrapper
+```
+
+Now connect the device you want to install the app in and run 
+
+```shell
+flutter run
+```
+
+This should launch the app on the device you wanted to download it to.
+
+
