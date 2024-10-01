@@ -7,7 +7,7 @@ Music downloader and player application built using Dart (Flutter).
 
 ### Direct Download (Android)
 
-The APK file for the application can be found [here](https://drive.google.com/file/d/16cBY-JGYyjVGf-AMfEsnRRupMIDwWv1M/), which can be installed on any android device / emulator.
+The APK file for the application can be found [here](https://drive.google.com/file/d/1XIZpzIyKp0tj-zhMIj7LuPyzfuJas14T/), which can be installed on any android device / emulator.
 
 ### Using Flutter 
 
